@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChinAI3 · Android — 会看屏幕、会点按钮的安卓 AI 助手</title>
+<meta name="description" content="ChinAI3 安卓版：把桌面级 AI 助手装进手机。视觉理解屏幕、按文字点击、读文档、联网搜索、长期记忆，全程无需 root。ARM64 APK 下载。">
+<meta name="theme-color" content="#0b0f17">
+<style>
+  :root{
+    --bg:#0b0f17;
+    --bg-2:#0e1420;
+    --card:rgba(21,29,42,.72);
+    --card-solid:#151d2a;
+    --line:rgba(255,255,255,.09);
+    --line-2:rgba(255,255,255,.16);
+    --fg:#e8eef7;
+    --muted:#94a6bd;
+    --muted-2:#6f8299;
+    --accent:#4f8cff;
+    --accent-2:#7c5cff;
+    --ok:#34d399;
+    --warn:#fbbf24;
+    --no:#f87171;
+    --radius:16px;
+    --maxw:1080px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,"Noto Sans SC",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 620px at 85% -12%, rgba(79,140,255,.20), transparent 60%),
+      radial-gradient(900px 560px at -8% 6%, rgba(124,92,255,.16), transparent 58%),
+      var(--bg);
+    color:var(--fg);
+    font-family:var(--font);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  .mono{font-family:var(--mono)}
+
+  /* ---------- nav ---------- */
+  header.nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    background:rgba(11,15,23,.72);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{max-width:var(--maxw);margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:14px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+  .brand .logo{width:30px;height:30px;border-radius:8px;flex:0 0 auto;box-shadow:0 4px 14px rgba(43,116,225,.4)}
+  .brand small{color:var(--muted);font-weight:500;font-size:12.5px}
+  .nav-links{margin-left:auto;display:flex;gap:20px;font-size:14px;color:var(--muted)}
+  .nav-links a:hover{color:var(--fg)}
+  @media(max-width:720px){.nav-links{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:66px 0 40px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:1.35fr .95fr;gap:40px;align-items:center}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:30px}}
+  .badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .badge{
+    font-size:12.5px;color:#cfe0ff;border:1px solid rgba(79,140,255,.35);
+    background:rgba(79,140,255,.10);padding:5px 11px;border-radius:999px;white-space:nowrap;
+  }
+  .badge.gray{color:#c3d0e0;border-color:var(--line-2);background:rgba(255,255,255,.04)}
+  h1{font-size:clamp(30px,5vw,50px);line-height:1.16;margin:0 0 16px;letter-spacing:-.01em}
+  h1 .grad{background:linear-gradient(100deg,var(--accent),var(--accent-2) 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{font-size:clamp(15px,2.2vw,18px);color:#c2cfdf;max-width:38em;margin:0 0 26px}
+  .lead b{color:#fff;font-weight:600}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;cursor:pointer;
+    padding:13px 22px;border-radius:12px;font-size:15px;font-weight:650;
+    border:1px solid transparent;transition:transform .12s ease,box-shadow .2s ease,background .2s;
+    font-family:inherit;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:linear-gradient(100deg,var(--accent),#3f6ff0);color:#fff;box-shadow:0 10px 26px rgba(63,111,240,.36)}
+  .btn-primary:hover{box-shadow:0 14px 32px rgba(63,111,240,.5)}
+  .btn-ghost{background:rgba(255,255,255,.05);border-color:var(--line-2);color:var(--fg)}
+  .btn-ghost:hover{background:rgba(255,255,255,.09)}
+  .hero-note{color:var(--muted-2);font-size:13px;margin-top:16px}
+
+  /* phone mock */
+  .phone-wrap{display:flex;justify-content:center}
+  .phone{
+    width:min(280px,78vw);aspect-ratio:9/18.5;border-radius:30px;
+    background:linear-gradient(160deg,#1b2432,#0f151f);
+    border:1px solid var(--line-2);
+    box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 0 0 6px #0a0e15;
+    padding:16px;position:relative;overflow:hidden;
+  }
+  .phone::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);width:64px;height:5px;border-radius:9px;background:#000;opacity:.6}
+  .phone-head{display:flex;align-items:center;gap:9px;margin:14px 0 16px}
+  .phone-head img{width:26px;height:26px;border-radius:7px}
+  .phone-head .t{font-size:13px;font-weight:600}
+  .phone-head .s{font-size:10.5px;color:var(--muted-2)}
+  .bubble{border-radius:13px;padding:9px 11px;font-size:11.5px;line-height:1.55;margin-bottom:9px;max-width:92%}
+  .bubble.user{background:#2b6cf0;color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+  .bubble.ai{background:#1d2735;border:1px solid var(--line);border-bottom-left-radius:4px;color:#d6e2f0}
+  .tool{display:flex;align-items:center;gap:7px;font-size:10.5px;color:#9fe7c8;background:rgba(52,211,153,.09);border:1px solid rgba(52,211,153,.25);border-radius:9px;padding:6px 9px;margin-bottom:9px;font-family:var(--mono)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 9px var(--ok);flex:0 0 auto}
+
+  /* ---------- sections ---------- */
+  section{padding:56px 0}
+  .sec-head{margin-bottom:30px;max-width:52em}
+  .kick{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px}
+  h2{font-size:clamp(22px,3.4vw,32px);margin:0 0 12px;letter-spacing:-.01em}
+  h3{font-size:17px;margin:0 0 8px}
+  .sec-head p{color:var(--muted);margin:0}
+
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:900px){.g3{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.g3,.g2{grid-template-columns:1fr}}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    transition:border-color .2s,transform .2s,background .2s;
+  }
+  .card:hover{border-color:var(--line-2);transform:translateY(-2px)}
+  .ico{
+    width:40px;height:40px;border-radius:11px;display:grid;place-items:center;margin-bottom:14px;
+    background:linear-gradient(140deg,rgba(79,140,255,.22),rgba(124,92,255,.18));
+    border:1px solid rgba(79,140,255,.28);color:#bcd4ff;
+  }
+  .ico svg{width:21px;height:21px}
+  .card p{color:var(--muted);font-size:14px;margin:0}
+
+  /* download box */
+  .dl{
+    background:linear-gradient(150deg,rgba(79,140,255,.13),rgba(124,92,255,.10));
+    border:1px solid rgba(79,140,255,.3);border-radius:20px;padding:26px;
+  }
+  .dl-top{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+  .dl-meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;padding-top:20px;border-top:1px dashed var(--line-2)}
+  .dl-meta div{font-size:13px}
+  .dl-meta .k{color:var(--muted-2);font-size:11.5px;letter-spacing:.04em}
+  .dl-meta .v{font-weight:650;margin-top:3px}
+  .field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .field .label{color:var(--muted);font-size:13px;min-width:64px}
+  .code{
+    font-family:var(--mono);font-size:13.5px;background:rgba(0,0,0,.34);border:1px solid var(--line);
+    padding:8px 12px;border-radius:9px;color:#dbe7f6;word-break:break-all;
+  }
+  .copy{
+    cursor:pointer;border:1px solid var(--line-2);background:rgba(255,255,255,.05);color:var(--fg);
+    border-radius:9px;padding:7px 13px;font-size:13px;font-family:inherit;transition:background .2s;
+  }
+  .copy:hover{background:rgba(255,255,255,.1)}
+  .copy.done{color:var(--ok);border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.1)}
+  .pass{font-family:var(--mono);font-size:19px;font-weight:700;letter-spacing:2px;color:#ffe08a}
+
+  /* tables */
+  .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+  th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line)}
+  thead th{font-size:12.5px;color:var(--muted);font-weight:650;letter-spacing:.03em;background:rgba(255,255,255,.03)}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:rgba(255,255,255,.025)}
+  td .pill{font-size:12px;padding:2px 9px;border-radius:999px;white-space:nowrap;font-weight:600}
+  .p-ok{color:#7ff0c2;background:rgba(52,211,153,.13)}
+  .p-warn{color:#ffd772;background:rgba(251,191,36,.13)}
+  .p-no{color:#ffb0b0;background:rgba(248,113,113,.13)}
+
+  /* steps */
+  .steps{counter-reset:s;display:grid;gap:14px}
+  .step{display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .step .n{
+    counter-increment:s;flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+    background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;font-size:14px;
+  }
+  .step .n::before{content:counter(s)}
+  .step h3{margin-bottom:3px}
+  .step p{color:var(--muted);font-size:14px;margin:0}
+  .step code{font-family:var(--mono);font-size:12.5px;background:rgba(0,0,0,.35);border:1px solid var(--line);padding:1px 6px;border-radius:6px;color:#d5e4f5}
+
+  pre{
+    background:#0a0f18;border:1px solid var(--line);border-radius:14px;padding:18px 20px;overflow-x:auto;
+    font-family:var(--mono);font-size:12.8px;line-height:1.7;color:#c5d4e6;margin:0;
+  }
+  pre .c{color:#5f7591}
+  pre .g{color:#7ff0c2}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 18px;margin-bottom:10px}
+  details[open]{border-color:var(--line-2)}
+  summary{cursor:pointer;padding:16px 0;font-weight:620;list-style:none;display:flex;align-items:center;gap:10px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"+";color:var(--accent);font-weight:700;font-size:17px;width:14px;display:inline-block}
+  details[open] summary::before{content:"–"}
+  details p{color:var(--muted);margin:0 0 16px;font-size:14px}
+
+  .note{
+    display:flex;gap:12px;border-left:3px solid var(--warn);background:rgba(251,191,36,.07);
+    border-radius:0 12px 12px 0;padding:14px 18px;color:#e9d9b0;font-size:13.5px;
+  }
+  .note.info{border-color:var(--accent);background:rgba(79,140,255,.07);color:#cbd9ee}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 46px;color:var(--muted-2);font-size:13px}
+  .foot-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center}
+
+  .toast{
+    position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);
+    background:#1c2837;border:1px solid var(--line-2);color:var(--fg);padding:11px 20px;border-radius:12px;
+    font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:100;
+    box-shadow:0 14px 34px rgba(0,0,0,.5);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="15" fill="#2b74e1"/>
+        <rect x="40" y="41" width="11" height="11" rx="2.5" fill="#f6f9ff" transform="rotate(45 45.5 46.5)"/>
+        <path d="M15 25h34a7 7 0 0 1 7 7v15a7 7 0 0 1-7 7H22L15 62V25z" fill="#f6f9ff"/>
+        <text x="32" y="49" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="700" fill="#2b74e1">AI</text>
+      </svg>
+      <span>ChinAI3 <small>· Android</small></span>
+    </div>
+    <nav class="nav-links">
+      <a href="#download">下载</a>
+      <a href="#features">能力</a>
+      <a href="#limits">边界</a>
+      <a href="#start">上手</a>
+      <a href="#faq">常见问题</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="badge-row reveal">
+        <span class="badge">v1.0.0 · ARM64</span>
+        <span class="badge gray">Android 8.0+</span>
+        <span class="badge gray">约 28 MB</span>
+        <span class="badge gray">无需 root</span>
+      </div>
+      <h1 class="reveal">会<b class="grad">看屏幕</b>、会<b class="grad">点按钮</b><br>的安卓 AI 助手</h1>
+      <p class="lead reveal">
+        ChinAI3 安卓版把桌面级 AI 助手装进手机：它能<b>截图看懂屏幕</b>，<b>按文字精准点击</b>，
+        帮你读文档、查资料、操作 App——就像一个真正坐在你手机前的人。全程<b>无需 root</b>，不依赖任何 PC。
+      </p>
+      <div class="cta-row reveal">
+        <a class="btn btn-primary" href="#download">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          下载 APK
+        </a>
+        <a class="btn btn-ghost" href="#features">看看它能做什么</a>
+      </div>
+      <p class="hero-note reveal">蓝奏云网盘直链 · 密码 <b class="mono" style="color:#ffe08a">2gc7</b> · 仅支持 64 位 ARM 手机</p>
+    </div>
+    <div class="phone-wrap reveal">
+      <div class="phone">
+        <div class="phone-head">
+          <svg class="logo" width="26" height="26" viewBox="0 0 64 64" aria-hidden="true" style="border-radius:7px">
+            <rect width="64" height="64" rx="15" fill="#2b74e1"/>
+            <path d="M15 25h34a7 7 0 0 1 7 7v15a7 7 0 0 1-7 7H22L15 62V25z" fill="#f6f9ff"/>
+            <text x="32" y="49" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="700" fill="#2b74e1">AI</text>
+          </svg>
+          <div>
+            <div class="t">ChinAI3</div>
+            <div class="s">正在操作手机…</div>
+          </div>
+        </div>
+        <div class="bubble user">帮我看看屏幕上有什么，然后点开设置</div>
+        <div class="tool"><span class="dot"></span> look() 截图 + OCR</div>
+        <div class="bubble ai">屏幕上是桌面，看到「设置」图标。</div>
+        <div class="tool"><span class="dot"></span> tap_text("设置")</div>
+        <div class="bubble ai">已经帮你打开了设置 ✓</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DOWNLOAD ================= -->
+<section id="download">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kick">Download</div>
+      <h2>下载安装</h2>
+      <p>单文件 APK，装完即用。首次安装需在系统设置里允许「安装未知来源应用」。</p>
+    </div>
+
+    <div class="dl reveal">
+      <div class="dl-top">
+        <div>
+          <h3 style="font-size:19px;margin-bottom:4px">ChinAI3-1.0.0-arm64.apk</h3>
+          <span style="color:var(--muted);font-size:13.5px">发布版 · 已签名 · 可直接安装</span>
+        </div>
+        <a class="btn btn-primary" href="https://wwaye.lanzoue.com/i8wYv4bzy7cj" target="_blank" rel="noopener noreferrer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          前往蓝奏云下载
+        </a>
+      </div>
+
+      <div class="field">
+        <span class="label">提取密码</span>
+        <span class="pass" id="pwd">2gc7</span>
+        <button class="copy" data-copy="2gc7">复制密码</button>
+        <span style="color:var(--muted-2);font-size:12.5px">打开下载页后输入即可</span>
+      </div>
+
+      <div class="field">
+        <span class="label">下载地址</span>
+        <span class="code" id="url">https://wwaye.lanzoue.com/i8wYv4bzy7cj</span>
+        <button class="copy" data-copy="https://wwaye.lanzoue.com/i8wYv4bzy7cj">复制链接</button>
+      </div>
+
+      <div class="dl-meta">
+        <div><div class="k">版本</div><div class="v">1.0.0</div></div>
+        <div><div class="k">架构</div><div class="v">arm64-v8a</div></div>
+        <div><div class="k">大小</div><div class="v">29,434,441 字节</div></div>
+        <div><div class="k">包名</div><div class="v mono" style="font-size:12.5px">com.chinai3.android</div></div>
+        <div><div class="k">最低系统</div><div class="v">Android 8.0（API 26）</div></div>
+        <div><div class="k">目标系统</div><div class="v">Android 15（API 35）</div></div>
+      </div>
+
+      <div class="field" style="margin-top:16px">
+        <span class="label">SHA-256</span>
+        <span class="code" id="sha" style="font-size:12px">11bcb4e0d7b972e0aa3e355088c00480753343636d0182fa60737c227388763d</span>
+        <button class="copy" data-copy="11bcb4e0d7b972e0aa3e355088c00480753343636d0182fa60737c227388763d">复制校验值</button>
+      </div>
+    </div>
+
+    <div class="note info reveal" style="margin-top:18px">
+      <span>ℹ️</span>
+      <div>本 APK 只打包了 <b class="mono">arm64-v8a</b> 原生库，<b>仅适用于 64 位 ARM 手机</b>。处理器较老的 32 位机型或 x86 模拟器安装后会提示「无法解析软件包」。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kick">Capabilities</div>
+      <h2>它能为你做什么</h2>
+      <p>不是只会聊天的对话框——而是一个能动手操作手机的助手。</p>
+    </div>
+
+    <div class="grid g3">
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>看屏幕 · 视觉理解</h3>
+        <p>用系统录屏（MediaProjection）实时截图，交给视觉模型真正「看」屏幕。画布、游戏、视频这类没有文字标签的界面，它也能理解。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V6a2 2 0 1 1 4 0v5"/><path d="M13 8.5a2 2 0 1 1 4 0V13a7 7 0 0 1-7 7h-1a7 7 0 0 1-7-7v-3a2 2 0 1 1 4 0"/></svg></div>
+        <h3>按文字点击 · 精准操作</h3>
+        <p>优先识别屏幕文字再点击目标，而不是靠猜坐标——比坐标点击可靠得多。支持点击、滑动、长按、滚动与返回/桌面/多任务。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9 13h6M9 17h4"/></svg></div>
+        <h3>读文档 · 本地解析</h3>
+        <p>直接读 <span class="mono">.docx / .pptx / .xlsx / .pdf</span> 和图片、纯文本，把内容抽取成文字交给 AI 分析，不用你先手动转换。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
+        <h3>联网搜索 · 网页抓取</h3>
+        <p>内置搜索与网页抓取工具，能查最新资料、抓取正文再总结，不局限于模型自己的旧记忆。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 1 4 4 3 3 0 0 1 1 5.8V15a5 5 0 0 1-10 0v-2.2A3 3 0 0 1 8 7a4 4 0 0 1 4-4Z"/><path d="M12 8v6"/></svg></div>
+        <h3>长期记忆</h3>
+        <p>会把你最近的对话总结成习惯、职业、常用 App 等画像，存进本机并注入下次对话——用得越久越懂你。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+        <h3>后台干活 · 通知回来</h3>
+        <p>驱动别的 App 时它必然在后台。任务进行中挂一条进度通知，完成自动提醒，点一下即可切回 ChinAI3。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></div>
+        <h3>多目录文件读写</h3>
+        <p>可授权任意多个文件夹，重启也能记住。AI 能读取、写入、重命名、复制、移动你的真实文件。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path d="M7 9h4M7 13h8"/></svg></div>
+        <h3>沿用桌面版界面</h3>
+        <p>内嵌原桌面版前端，聊天、思考过程、工具调用时间线原样呈现，手机上体验一致。</p>
+      </div>
+      <div class="card reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg></div>
+        <h3>不设硬性步数上限</h3>
+        <p>长任务不会被硬砍。改用循环检测：连续重复同一个动作才介入，合法的一长串步骤照常跑完。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT DIFFERS ================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kick">Design</div>
+      <h2>和桌面版有什么不同</h2>
+      <p>桌面版靠操作系统的控件树「看」界面；安卓上没有这套东西，于是改成了视觉优先。</p>
+    </div>
+    <div class="table-scroll reveal">
+      <table>
+        <thead>
+          <tr><th style="width:22%">环节</th><th style="width:39%">桌面版</th><th>安卓版</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>屏幕理解</td><td>系统控件树</td><td><b>截图 + 视觉模型</b>，ML Kit 中文 OCR 兜底</td></tr>
+          <tr><td>点击方式</td><td>按控件 ID 点击</td><td><b>优先按文字点击</b>，坐标点击为辅</td></tr>
+          <tr><td>按键</td><td>组合键注入</td><td>返回 / 桌面 / 多任务 + 焦点输入框写入</td></tr>
+          <tr><td>文件访问</td><td>直接读写路径</td><td>私有目录 + 用户授权的 SAF 目录</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note reveal" style="margin-top:18px">
+      <span>💡</span>
+      <div>关键差别：桌面版把控件树当「眼睛」，安卓版只把它当可选辅助。所以<b>即使关掉无障碍权限</b>，它依然能看屏幕、能理解内容，只是点不了——而不是整个瞎掉，鲁棒性更强。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LIMITS ================= -->
+<section id="limits">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kick">Honest Limits</div>
+      <h2>诚实的能力边界</h2>
+      <p>知道它做不到什么，比只讲它能做什么更重要。</p>
+    </div>
+    <div class="table-scroll reveal">
+      <table>
+        <thead><tr><th style="width:60%">能力</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td>看屏幕（截图 + 视觉模型）</td><td><span class="pill p-ok">✅ 支持</span></td></tr>
+          <tr><td>识别屏幕文字（ML Kit 中文 OCR）</td><td><span class="pill p-ok">✅ 支持</span></td></tr>
+          <tr><td>点击 / 滑动 / 长按 / 滚动</td><td><span class="pill p-ok">✅ 需开无障碍</span></td></tr>
+          <tr><td>按文字点击</td><td><span class="pill p-ok">✅ 比坐标可靠</span></td></tr>
+          <tr><td>系统按键（返回 / 桌面 / 多任务）</td><td><span class="pill p-ok">✅ 支持</span></td></tr>
+          <tr><td>输入文字（焦点输入框）</td><td><span class="pill p-ok">✅ 部分场景受限</span></td></tr>
+          <tr><td>启动应用 / 打开网址</td><td><span class="pill p-ok">✅ 支持</span></td></tr>
+          <tr><td>剪贴板读写</td><td><span class="pill p-ok">✅ 支持</span></td></tr>
+          <tr><td>文件读写</td><td><span class="pill p-ok">✅ 私有目录 + 授权目录</span></td></tr>
+          <tr><td>万能按键注入（如 Ctrl+X）</td><td><span class="pill p-no">❌ 系统无此能力</span></td></tr>
+          <tr><td>读取任意 App 内部数据</td><td><span class="pill p-no">❌ 沙箱限制</span></td></tr>
+          <tr><td>后台持续操作</td><td><span class="pill p-warn">⚠️ 需前台服务，系统可能限制</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GET STARTED ================= -->
+<section id="start">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kick">Get Started</div>
+      <h2>四步上手</h2>
+      <p>装好之后，按顺序把「眼睛」「手」「大脑」都准备好。</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="n"></div><div>
+        <h3>安装并打开</h3>
+        <p>下载 APK 后安装（首次需允许「安装未知来源应用」），打开 ChinAI3，进入底部「权限 / 设置」。</p>
+      </div></div>
+      <div class="step reveal"><div class="n"></div><div>
+        <h3>授予屏幕录制 —— AI 的眼睛</h3>
+        <p>在设置里开启录屏授权，它才能截图看懂屏幕。</p>
+      </div></div>
+      <div class="step reveal"><div class="n"></div><div>
+        <h3>开启无障碍 —— AI 的手</h3>
+        <p>路径：<code>设置 → 无障碍 → 已安装的服务 → ChinAI3 屏幕控制</code>，打开开关。关闭后仍可看屏幕，但无法点击。</p>
+      </div></div>
+      <div class="step reveal"><div class="n"></div><div>
+        <h3>填 API Key —— AI 的大脑</h3>
+        <p>填入 DeepSeek API Key（默认服务地址 <code>https://api.deepseek.com</code>，模型 <code>deepseek-v4-flash-vision-exp</code>）。可选：授权一个文件夹，它就能读写你的真实文件。</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TECH ================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kick">Under the Hood</div>
+      <h2>架构一览</h2>
+      <p>全部基于成熟开源项目构建，不自造轮子。</p>
+    </div>
+    <pre class="reveal"><span class="c"># 请求在手机内部的一次完整旅程</span>
+WebView        <span class="c">← 复用桌面版前端（聊天 / 思考 / 工具时间线）</span>
+   │  http://127.0.0.1:8731
+   ▼
+Ktor 内嵌 HTTP 服务        <span class="c">← io.ktor</span>
+   │  /api/chat 流式 aim_think / aim_tool / aim_usage
+   ▼
+LangChain4j agent 循环     <span class="c">← 工具调用 / 消息簿记全交给框架</span>
+   ▼
+DeepSeek 视觉模型           <span class="c">← OpenAI 兼容，零改造</span>
+   ▼
+<span class="g">设备工具（@Tool）</span>
+   ├─ look()       截屏 + OCR，图像并入多模态消息
+   ├─ tap_text()   按文字点击（主力）
+   ├─ tap / swipe / scroll / longPress / press
+   ├─ typeText()   写入焦点输入框
+   ├─ listApps / launchApp / openUrl / clipboard
+   ├─ readFile / writeFile / renameFile / copyFile / listDir
+   └─ webSearch / fetchUrl</pre>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kick">FAQ</div>
+      <h2>常见问题</h2>
+    </div>
+
+    <details class="reveal"><summary>为什么需要屏幕录制权限？</summary>
+      <p>这是它的「眼睛」。安卓上 AI 无法直接读取别的 App 的界面内容，只能通过系统录屏拿到屏幕画面，再交给视觉模型理解。截图只在你本机处理，只有当前任务需要的画面才会发给模型。</p>
+    </details>
+    <details class="reveal"><summary>为什么需要无障碍权限？关掉会怎样？</summary>
+      <p>无障碍是安卓上唯一无需 root、无需改机的触摸注入途径，即它的「手」。关掉之后它仍能看屏幕、识别文字、回答你的问题，只是无法点击操作——不会整个失效。</p>
+    </details>
+    <details class="reveal"><summary>提示无法安装 / 解析包错误？</summary>
+      <p>多半是机型不匹配。此版本只含 <span class="mono">arm64-v8a</span> 原生库，需要 64 位 ARM 处理器且系统为 Android 8.0 及以上。32 位老机型、部分 x86 模拟器无法安装。</p>
+    </details>
+    <details class="reveal"><summary>要自己准备 API Key 吗？</summary>
+      <p>要。App 本身不内置密钥，需要你填自己的 DeepSeek API Key（服务地址默认 <span class="mono">https://api.deepseek.com</span>）。密钥只保存在本机 App 私有目录。</p>
+    </details>
+    <details class="reveal"><summary>它能读哪些格式的文件？</summary>
+      <p>支持 <span class="mono">.docx / .pptx / .xlsx / .pdf</span>、图片和纯文本。Word/PPT/Excel 通过解析文档本身抽取文字（不引重型依赖），PDF 用 pdfbox，图片则走视觉模型识别。</p>
+    </details>
+    <details class="reveal"><summary>会不会一直烧 token？</summary>
+      <p>没有硬性步数上限，但内置循环检测：连续重复同一个动作会先警告、再中止。参数不同的长任务（比如滚动浏览很长的列表）不会被误伤。</p>
+    </details>
+    <details class="reveal"><summary>手机上它会一直在后台吗？</summary>
+      <p>它驱动的是别的 App，所以运行时必然在后台。任务期间会有进度通知，完成后可自动切回。Android 13 及以上会请求通知权限，不授权也不影响使用。</p>
+    </details>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA ================= -->
+<section>
+  <div class="wrap">
+    <div class="dl reveal" style="text-align:center">
+      <h2 style="margin-bottom:8px">把 AI 装进你的手机</h2>
+      <p style="color:var(--muted);margin:0 0 22px">ChinAI3 · Android v1.0.0 · ARM64 · 约 28 MB</p>
+      <a class="btn btn-primary" href="https://wwaye.lanzoue.com/i8wYv4bzy7cj" target="_blank" rel="noopener noreferrer" style="font-size:16px;padding:15px 30px">
+        立即下载（密码 2gc7）
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div>ChinAI3 · Android &nbsp;|&nbsp; 包名 <span class="mono">com.chinai3.android</span> &nbsp;|&nbsp; v1.0.0 (1)</div>
+    <div>© <span id="year"></span> ChinAI3 · 本页为单文件离线介绍页</div>
+  </div>
+</footer>
+
+<div class="toast" id="toast">已复制</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* 复制到剪贴板 */
+  var toast = document.getElementById('toast'), toastTimer;
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1600);
+  }
+  function fallbackCopy(text){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly','');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){ return false; }
+  }
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-copy') || '';
+      var done = function(){
+        var old = btn.textContent;
+        btn.textContent = '✓ 已复制';
+        btn.classList.add('done');
+        showToast('已复制到剪贴板');
+        setTimeout(function(){ btn.textContent = old; btn.classList.remove('done'); }, 1500);
+      };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done).catch(function(){
+          fallbackCopy(text) ? done() : showToast('复制失败，请手动选择');
+        });
+      }else{
+        fallbackCopy(text) ? done() : showToast('复制失败，请手动选择');
+      }
+    });
+  });
+
+  /* 滚动淡入 */
+  var items = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, {rootMargin:'0px 0px -8% 0px', threshold:.05});
+    items.forEach(function(el, i){
+      el.style.transitionDelay = Math.min(i % 4, 3) * 60 + 'ms';
+      io.observe(el);
+    });
+  }else{
+    items.forEach(function(el){ el.classList.add('in'); });
+  }
+
+  /* 年份 */
+  var y = document.getElementById('year');
+  if(y){ y.textContent = new Date().getFullYear(); }
+})();
+</script>
+</body>
+</html>
