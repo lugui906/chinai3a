@@ -17,8 +17,8 @@
 | 大小 | 29,434,441 字节（约 28 MB） |
 | 包名 | `com.chinai3.android` |
 | 系统要求 | Android 8.0+（API 26），仅 64 位 ARM |
-| 下载地址 | https://wwaye.lanzoue.com/iDv3Q4cc6v6h |
-| 提取密码 | `3a0f` |
+| 下载地址 | https://wwaye.lanzoue.com/iWJmZ4ccqy8h |
+| 提取密码 | `70di` |
 | SHA-256 | `11bcb4e0d7b972e0aa3e355088c00480753343636d0182fa60737c227388763d` |
 
 ## 本地查看
